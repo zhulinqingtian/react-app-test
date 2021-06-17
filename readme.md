@@ -187,20 +187,112 @@ module.exports = webpackMerge.merge(baseWebpackConfig, {
 });
 ```
 
-### 引入react框架
+## 引入react框架
+```
+npm install -S react react-dom
+```
+
+### 支持react的打包构建（配置webpack）:
+
+1、安装，配置babel（babel7.x）
+
+```
+npm install -D @babel/core @babel/preset-env @babel/preset-react 
+npm install -D @babel/plugin-transform-runtime @babel/runtime @babel/runtime-corejs2
+```
+
+@babel/core：babel的核心库
+
+@babel/preset-env：把es6,es7语法转换成es5。bebel7以上的版本只用这一个预设包就可以实现语法的转换，已经废弃了preset-stage-0，preset-stage-1，preset-stage-2等这些包。但是这个包还不能转换es6，es7的一些新特性比如Array.includes()，这就需要我们使用@babel/plugin-transform-runtime了
+
+@babel/preset-react：把react语法转换为es5
+
+@babel/plugin-transform-runtime：支持一些es6，es7的新语法
 
 
+添加babel的配置了，在项目目录创建.babelrc：
+```
+{
+  "presets": [
+    ["@babel/preset-env", {
+      "modules": false,
+      "targets": {
+        "browsers": ["> 1%", "last 2 versions", "not ie <= 8"]
+      }
+    }],
+    "@babel/preset-react"
+  ],
+  "plugins": [
+    ["@babel/plugin-transform-runtime",{
+      "corejs": 2, // polyfill 需要使用@babel/runtime-corejs2
+      "useBuildIns":"usage", //按需引入,即使用什么新特性打包什么新特性, 可以减小打包的体积
+    }]
+    
+  ]
+}
+```
 
+2、webpack4.x 配置编译打包规则
+```
+npm install -D babel-loader
+npm install -D style-loader css-loader
+npm install -D url-loader file-loader
+npm install -D less less-loader
+```
 
+在 webpack.base.config.js添加打包编译构建规则:
+```javascript
+const rule = {
+  rules: [
+      {
+          test: /\.(js|jsx)$/, // 一个匹配loaders所处理的文件的拓展名的正则表达式，这里用来匹配js和jsx文件（必须）
+          exclude: /node_modules/, // 屏蔽不需要处理的文件（文件夹）（可选）
+          loader: 'babel-loader', // loader的名称（必须）
+      },
+      {
+          test: /\.css$/,
+          use:[
+              {
+                  loader: 'style-loader', // 创建 <style></style>
+              },
+              { 
+                  loader: 'css-loader', // 转换css
+              }
+          ]
+      },
+      {
+          test: /\.less$/,
+          use: [
+              { loader: 'style-loader' },
+              {
+                loader: 'css-loader',
+              },
+              {
+              loader: 'less-loader', // 编译 Less -> CSS
+              },
+          ],
+      },
+      {
+          test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
+          loader: 'url-loader',
+          options: {
+              limit: 10000, // url-loader 包含file-loader，这里不用file-loader, 小于10000B的图片base64的方式引入，大于10000B的图片以路径的方式导入
+              name: 'static/img/[name].[hash:7].[ext]'
+          }
+      },
+      {
+          test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
+          loader: 'url-loader',
+          options: {
+              limit: 10000, // 小于10000B的图片base64的方式引入，大于10000B的图片以路径的方式导入
+              name: 'static/fonts/[name].[hash:7].[ext]'
+          }
+      }
+  ]
+}
+```
 
-
-
-
-
-
-
-
-
+3、编写页面，运行项目，测试打包
 
 
 
@@ -213,3 +305,10 @@ module.exports = webpackMerge.merge(baseWebpackConfig, {
 #### 问题：Error: Cannot find module 'webpack/bin/config-yargs'
 思路：因为当前版本的webpack-dev-server@2.11.5 不支持 webpack@4.43.0这种高版本。
 因此，只需删除当前的webpack-dev-server文件夹，然后重装高版本即可。
+
+#### 问题：Module build failed (from ./node_modules/less-loader/dist/cjs.js): TypeError: this.getOptions
+less-loader的版本太高了
+
+```
+ npm install less-loader@7.3.0 --save-dev
+```
