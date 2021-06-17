@@ -295,7 +295,14 @@ const rule = {
 3、编写页面，运行项目，测试打包
 
 
+### react路由
+```json
+{
+  "react-router-dom": "^5.2.0"
+}
+```
 
+1、添加app.js页面，作为项目根组件，配置路由信息。并在index.js中引入app.js
 
 
 
