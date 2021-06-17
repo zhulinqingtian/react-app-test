@@ -1,3 +1,5 @@
+https://www.jianshu.com/p/04e436cf75ba
+
 ### 初始化项目
 
 生成package.json文件
@@ -17,9 +19,15 @@ package.json中添加运行命令 build，此时运行npm run build可以生成 
 
 ```json
 {
-  "webpack-cli": "^3.3.6",
-  "webpack": "^4.0.0-beta.3",
-  "webpack-dev-server": "2.7.1"
+  "devDependencies": {
+    "html-webpack-plugin": "4.0.0",
+    "webpack-cli": "^3.3.6",
+    "webpack": "^4.0.0-beta.3",
+    "webpack-merge": "^5.8.0"
+  },
+  "dependencies": {
+    "webpack-dev-server": "^3.11.2"
+  }
 }
 ```
 
@@ -110,3 +118,98 @@ new HtmlWebpackPlugin({
 例如 webpack用的是4，那么html-webpack-plugin版本也要是4,否则就出错
 
 ### 抽取 webpack 配置文件
+为了区分开发环境和生产环境，下面我们一步一步抽取webpack公共配置。
+
+分别创建 utils.js ，webpack.base.config.js ， webpack.dev.config.js ， webpack.prod.config.js
+
+#### webpack-merge插件
+在抽取 webpack 配置过程中，需要使用 `webpack-merge` 插件。
+
+作用：合并webpack配置，可以对不同文件的webpack配置合并成一个完整的webpack配置。
+```
+npm install -D webpack-merge
+```
+
+修改 package.json的 build 命令：
+```
+"build": "webpack --config build/webpack.prod.config.js"
+```
+
+#### 问题： webpackMerge is not a function
+```javascript
+const webpackMerge = require("webpack-merge");
+const baseWebpackConfig = require("./webpack.base.config");
+
+module.exports = webpackMerge(baseWebpackConfig, {});
+
+// 解决方法：
+module.exports = webpackMerge.merge(baseWebpackConfig, {});
+```
+
+### 配置开发环境 webpack.dev.config.js
+开发环境需要我们使用 webpack-dev-server 插件
+
+1、添加 package.json 命令，用 webpack-dev-server启动服务
+```json
+{
+  "dev": "webpack-dev-server",
+}
+```
+
+执行npm run dev，现在已经可以正常启动一个服务了，默认端口8080，服务的根目录是项目的根目录.
+
+修改 dev命令，指定配置文件：
+```json
+{
+  "start": "webpack-dev-server --inline --progress --config build/webpack.dev.config.js"
+}
+```
+
+2、丰富 webpack-dev-server 配置
+
+在 webpack.dev.config.js 的 devServer 属性下添加开发环境启动服务的配置：
+```javascript
+// 开发环境本地启动的服务配置
+const webpackMerge = require("webpack-merge");
+const baseWebpackConfig = require("./webpack.base.config");
+module.exports = webpackMerge.merge(baseWebpackConfig, {
+  devServer: {
+     historyApiFallback: true, // 当找不到路径的时候，默认加载index.html文件
+     hot: true,
+     contentBase: false, // 告诉服务器从哪里提供内容。只有在你想要提供静态文件时才需要
+     compress: true, // 一切服务都启用gzip 压缩：
+     port: "8081", // 指定段靠谱
+     publicPath: "/", // 访问资源加前缀
+     proxy: {
+         // 接口请求代理
+     }
+   }
+});
+```
+
+### 引入react框架
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### 问题：Error: Cannot find module 'webpack/bin/config-yargs'
+思路：因为当前版本的webpack-dev-server@2.11.5 不支持 webpack@4.43.0这种高版本。
+因此，只需删除当前的webpack-dev-server文件夹，然后重装高版本即可。
